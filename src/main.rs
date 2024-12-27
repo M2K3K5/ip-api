@@ -51,7 +51,7 @@ fn handle_empty_ip(req: &HttpRequest) -> HttpResponse {
                 .body(format!("<h1>An IP API that provides general data about ip addresses, such as location or internet provider, and identifies nordvpn users.</h1><p>To use the api keep the following url format: https://{}/ip/[ip]<br><br>For example: <a target='_blank' href='https://{}/ip/1.1.1.1'>https://{}/ip/1.1.1.1</a></p>", host, host, host));
         } else if let Some(cf_ip) = req
             .headers()
-            .get("HTTP_CF_CONNECTING_IP")
+            .get("CF-Connecting-IP")
             .and_then(|ip| ip.to_str().ok())
         {
             return redirect_to_ip(cf_ip, req);
