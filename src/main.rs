@@ -55,6 +55,12 @@ fn handle_empty_ip(req: &HttpRequest) -> HttpResponse {
             .and_then(|ip| ip.to_str().ok())
         {
             return redirect_to_ip(cf_ip, req);
+        } else if let Some(caddy_ip) = req
+            .headers()
+            .get("X-Real-IP")
+            .and_then(|ip| ip.to_str().ok())
+        {
+            return redirect_to_ip(caddy_ip, req);
         } else if let Some(user_ip) = req.peer_addr().map(|addr| addr.ip().to_string()) {
             return redirect_to_ip(&user_ip, req);
         }
