@@ -77,21 +77,7 @@ fn invalid_query_response(ip: &str) -> HttpResponse {
 }
 
 async fn fetch_ip_data(ip: &str) -> Result<serde_json::Value, String> {
-    let nord_url = format!(
-        "https://nordvpn.com/wp-admin/admin-ajax.php?action=get_user_info_data&ip={}",
-        ip
-    );
-    let ipapi_url = format!("http://ip-api.com/json/{}?fields=66846719&lang=en", ip);
-
-    let nord_resp = reqwest::get(&nord_url)
-        .await
-        .map_err(|_| "Failed to fetch NordVPN data")?;
-    let nord_text = nord_resp
-        .text()
-        .await
-        .map_err(|_| "Failed to read NordVPN response")?;
-    let nord: serde_json::Value =
-        serde_json::from_str(&nord_text).map_err(|_| "Failed to parse NordVPN response")?;
+    let ipapi_url = format!("https://api.ipapi.is/?q={}", ip);
 
     let ipapi_resp = reqwest::get(&ipapi_url)
         .await
@@ -102,20 +88,14 @@ async fn fetch_ip_data(ip: &str) -> Result<serde_json::Value, String> {
         .map_err(|_| "Failed to read IP-API response")?;
     let mut ipapi: serde_json::Value =
         serde_json::from_str(&ipapi_text).map_err(|_| "Failed to parse IP-API response")?;
-
-    if let Some(domain) = nord["host"]["domain"].as_str() {
-        ipapi["host_domain"] = json!(domain);
+    
+    if ipapi["vpn"]["service"] == "NordVPN" {
+        ipapi["nordvpn_connected"] = true.into();
     }
-    if let Some(lat) = nord["coordinates"]["latitude"].as_f64() {
-        ipapi["lat"] = json!(lat);
+    else {
+        ipapi["nordvpn_connected"] = false.into();
     }
-    if let Some(lon) = nord["coordinates"]["longitude"].as_f64() {
-        ipapi["lon"] = json!(lon);
-    }
-    if let Some(status) = nord["status"].as_bool() {
-        ipapi["nordvpn_connected"] = json!(status);
-    }
-    ipapi["sources"] = json!(["http://ip-api.com", "https://nordvpn.com"]);
+    ipapi["sources"] = json!(["https://api.ipapi.is"]);
 
     Ok(ipapi)
 }
